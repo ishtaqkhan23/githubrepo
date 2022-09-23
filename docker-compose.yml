@@ -1,0 +1,176 @@
+version: '3.1'
+
+services:
+  mongo:
+    image: mongo
+    restart: always
+    expose:
+        - 27017
+#    networks:
+#            - github-network
+    network_mode : host
+    
+  mysql:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'github_repo'
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: 'user'
+      # You can use whatever password you like
+      MYSQL_PASSWORD: 'password'
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: 'root'
+    ports:
+      # <Port exposed> : < MySQL Port running inside container>
+      - '3306:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3306' 
+
+  rabbitmq:
+      image: rabbitmq:management
+      ports:
+        - "5672:5672" #JMS Port
+        - "15672:15672" #Management Port - default user:pass = guest:guest
+   
+              
+  favorite-repos-spring:
+       build:
+            favorite-repos/
+       container_name: favoriteservice
+       restart: always
+       image: favoriteservice:latest
+       ports: 
+        - '8081:8081'
+       expose:
+          - 8081
+       network_mode : host 
+#       networks: 
+#            - github-network
+       depends_on:
+            - mongo
+            - config-server-spring
+            - github-eureka-server-spring
+#       links:
+#            - config-server-spring
+#            - github-eureka-server-spring
+       
+            
+  config-server-spring:
+       build:
+            config-server/
+       container_name: config-server
+       restart: always
+       image: config-server:latest
+       ports: 
+        - '8084:8084'
+       expose:
+        - 8084
+       network_mode : host 
+#       networks:
+#            - github-network
+       depends_on:
+            - mongo
+            - github-eureka-server-spring
+#       links:
+#            - github-eureka-server-spring
+            
+  github-zuul-server-spring:
+       build:
+            github-zuul-server/
+       container_name: github-zuul-server
+       restart: always
+       image: github-zuul-server:latest
+       ports: 
+        - '8762:8762'
+       expose:
+        - 8762
+       network_mode : host 
+#       networks:
+#            - github-network
+       depends_on:
+            - config-server-spring
+            - github-eureka-server-spring
+#       links:
+#            - config-server-spring
+#            - github-eureka-server-spring
+            
+   
+  github-eureka-server-spring:
+       build:
+            githuub-eureka-server/
+       container_name: github-eureka-server
+       restart: always
+       image: github-eureka-server:latest
+       ports: 
+        - '8761:8761'
+       expose:
+        - 8761 
+       network_mode : host 
+#       networks: 
+#        - github-network
+#  
+  
+  login-service-spring:
+       build:
+            login-service/
+       container_name: login-service
+       restart: always
+       image: login-service:latest
+       ports: 
+        - '8083:8083'
+       expose:
+        - 8083 
+       network_mode : host
+#       networks:
+#            - github-network
+       depends_on:
+            - mysql
+            - config-server-spring
+            - github-eureka-server-spring
+            - rabbitmq
+       environment: # Pass environment variables to the service
+            SPRING.JPA.HIBERNATE.DDL_AUTO: update
+            SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/github_repo
+            SPRING_DATASOURCE_USERNAME: user
+            SPRING_DATASOURCE_PASSWORD: password 
+#       links:
+#            - config-server-spring
+#            - github-eureka-server-spring
+       
+  
+  registration-service-spring:
+       build:
+            registration-service/
+       container_name: registration-service
+       restart: always
+       image: registration-service:latest
+       ports: 
+        - '8082:8082' 
+       expose:
+        - 8082
+       network_mode : host
+#       networks:
+#            - github-network
+       depends_on:
+            - mongo               
+            - config-server-spring
+            - github-eureka-server-spring
+            - rabbitmq            
+#       links:
+#            - config-server-spring
+#            - github-eureka-server-spring
+       
+  angular:
+       build:
+            github-repo-app/
+       container_name: angular
+       restart: always
+       image: angular:latest
+       network_mode : host
+#       networks:
+#            - github-network
+       ports: 
+        - '8080:8080' 
+        

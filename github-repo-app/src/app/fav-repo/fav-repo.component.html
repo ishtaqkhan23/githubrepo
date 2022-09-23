@@ -1,0 +1,26 @@
+<div class="page-header bg-blue row">
+  <div class="col-sm-8">
+  Welcome {{username}} 
+  </div>
+  <div class=" col-sm-4 text-right">
+     <span class="p-2"><a routerLink="/favorites" class="text-white"> <i class="fas fa-star"></i></a></span>
+     <span class="p-2" (click)="logout()"><i class="fas fa-sign-out-alt"></i></span>
+  </div>
+</div>
+
+<h2 class="text-center">Favourite Repositories</h2>
+<div *ngIf="userRepos" class="pl-5 pr-5">
+    <ul class="list-group">
+      <div *ngFor="let userRepo of userRepos">
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-4">{{userRepo.repoName}}</div> 
+            <div class="col-4">{{userRepo.repoLocation}}</div>
+            <div class="col-4 text-right"><button type="button"class="btn btn-danger" (click)="removeRepoFromFav(userRepo.id)">Remove</button></div>
+          </div>
+        </li>
+      </div>  
+    </ul>
+  </div>
+  
+  
